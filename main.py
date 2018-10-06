@@ -24,13 +24,16 @@ test_data = pd.read_csv('./data/test_data.csv', low_memory=False,
 train_data.index.freq = 'D'
 test_data.index.freq = 'D'
 
+train_data = train_data['global_active_power']
+test_data = test_data['global_active_power']
+
 days = ['sun', 'mon', 'tue', 'wed', 'thr', 'fri', 'sat']
 
 dpf = ('daily', DPForecaster())
 wpf = ('weekly', WPForecaster())
 yof = ('yearly', YOForecaster())
 
-models = [dpf, wpf, yof]
+models = [dpf]
 
 for name, model in models:
     score, scores = model.evaluate_model(train_data, test_data)
