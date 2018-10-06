@@ -7,7 +7,7 @@ Created on Fri Oct  5 11:55:07 2018
 """
 import pandas as pd
 import matplotlib.pyplot as plt
-from models import DPForecaster, WPForecaster, YOForecaster
+from models import DPForecaster, WPForecaster, YOForecaster, ARForecaster
 
 def summarise_scores(name, score, scores):
     scores = ', '.join(['%.3f' % s for s in scores])
@@ -21,6 +21,9 @@ test_data = pd.read_csv('./data/test_data.csv', low_memory=False,
                          infer_datetime_format=True, parse_dates=True,
                          index_col=['datetime'])
 
+train_data.index.freq = train_data.index.inferred_freq
+test_data.index.freq = test_data.index.inferred_freq
+
 train_data = train_data['global_active_power']
 test_data = test_data['global_active_power']
 
@@ -29,8 +32,9 @@ days = ['sun', 'mon', 'tue', 'wed', 'thr', 'fri', 'sat']
 dpf = ('daily', DPForecaster())
 wpf = ('weekly', WPForecaster())
 yof = ('yearly', YOForecaster())
+arf = ('ar', ARForecaster())
 
-models = [dpf]
+models = [dpf, wpf, yof, arf]
 
 for name, model in models:
     score, scores = model.evaluate_model(train_data, test_data)

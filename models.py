@@ -8,32 +8,20 @@ Created on Fri Oct  5 15:32:58 2018
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error
+from statsmodels.tsa.arima_model import ARIMA
 
 class TSForecaster():
     
     def evaluate_model(self, train, test):
         forecast = np.zeros((len(test)//7,7))
         for i in range(forecast.shape[0]):
-            self.fit()
-            prediction = self.make_forecast(train)
+            self.fit(train)
+            prediction = self._forecast(train)
             forecast[i,:] = prediction
-            train = np.append(train, test[i:(i+7)])
+            train = train.append(test[i*7:(i+1)*7])
         forecast = forecast.reshape((-1,1))
         scores, score = self.evaluate_forecast(forecast, test)
         return scores, score
-        
-#        train_vals = self.unpack_data(train)
-#        test_vals = self.unpack_data(test)
-#        train_vals = [x for x in train_vals]
-#        forecast = []
-#        for i in range(len(test_vals)):
-#            self.fit()
-#            prediction = self.make_forecast(train_vals)
-#            forecast.append(prediction)
-#            train_vals.append(test_vals[i,:])
-#        forecast = np.array(forecast)
-#        score, scores = self.evaluate_forecast(forecast, test_vals[:,:,0])
-#        return score, scores
     
     def evaluate_forecast(self, forecast, actual):
         score = np.sqrt(mean_squared_error(forecast, actual))
@@ -44,55 +32,49 @@ class TSForecaster():
             scores.append(np.sqrt(mean_squared_error(forecast[:,i], actual[:,i])))
         return score, scores
         
-        
-#        scores = []
-#        for i in range(actual.shape[1]):
-#            mse = mean_squared_error(actual[:,i], forecast[:,i])
-#            rmse = np.sqrt(mse)
-#            scores.append(rmse)
-#        score = np.sqrt(mean_squared_error(forecast, actual))    
-#        return score, scores
-        
-#    def forecast(self, data, M):
-#        data_vals = self.unpack_data(data)
-#        forecast = self.make_forecast(data_vals)
-#        dates = data.index + 7
-#        forecast = pd.Series(forecast, index=dates[-7:])
-#        return forecast
-#        
-#    def unpack_data(self,data):
-#        data = data.values
-#        data = np.array(np.split(data, len(data)/7))
-#        return data
+    def forecast(self, data):
+        self.fit()
+        forecast = self._forecast(data)
+#        data.index.freq = data.index.inferred_freq
+        dates = data.index + 7
+        forecast = pd.Series(forecast, index=dates[-7:])
+        return forecast
         
 class DPForecaster(TSForecaster):
     
-    def fit(self):
+    def fit(self, *args):
         return
     
-    def make_forecast(self, data):
+    def _forecast(self, data):
         prediction = np.array(data[-1]).repeat(7)
         return prediction
-        
-#        last_week = data[-1]
-#        value = last_week[-1,0]
-#        prediction = [value for _ in range(7)]
-#        return prediction
     
 class WPForecaster(TSForecaster):
     
-    def fit(self):
+    def fit(self, *args):
         return
     
-    def make_forecast(self, data):
-        last_week = data[-1]
-        return last_week[:,0]
+    def _forecast(self, data):
+        prediction = np.array(data[-7:])
+        return prediction
     
 class YOForecaster(TSForecaster):
     
-    def fit(self):
+    def fit(self, *args):
         return
     
-    def make_forecast(self, data):
-        last_week = data[-52]
-        return last_week[:,0]
+    def _forecast(self, data):
+        prediction = np.array(data[-364:-357])
+        return prediction
+    
+class ARForecaster(TSForecaster):
+    
+    def fit(self, data):
+        freq = data.index.inferred_freq
+        model = ARIMA(data, order=(7,0,0), freq=freq)
+        self.model = model.fit(disp=False)
+        return
+    
+    def _forecast(self, data):
+        prediction = self.model.predict(len(data), len(data)+6)
+        return prediction
