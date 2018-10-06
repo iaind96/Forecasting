@@ -21,9 +21,6 @@ test_data = pd.read_csv('./data/test_data.csv', low_memory=False,
                          infer_datetime_format=True, parse_dates=True,
                          index_col=['datetime'])
 
-train_data.index.freq = 'D'
-test_data.index.freq = 'D'
-
 train_data = train_data['global_active_power']
 test_data = test_data['global_active_power']
 
