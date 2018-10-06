@@ -27,9 +27,9 @@ class TSForecaster():
         score = np.sqrt(mean_squared_error(forecast, actual))
         forecast = forecast.reshape((-1,7))
         actual = actual.values.reshape((-1,7))
-        scores = []
+        scores = np.zeros((7))
         for i in range(7):
-            scores.append(np.sqrt(mean_squared_error(forecast[:,i], actual[:,i])))
+            scores[i] = np.sqrt(mean_squared_error(forecast[:,i], actual[:,i]))
         return score, scores
         
     def forecast(self, data):

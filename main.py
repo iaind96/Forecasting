@@ -6,13 +6,9 @@ Created on Fri Oct  5 11:55:07 2018
 @author: iain
 """
 import pandas as pd
-import matplotlib.pyplot as plt
-from models import DPForecaster, WPForecaster, YOForecaster, ARForecaster
-
-def summarise_scores(name, score, scores):
-    scores = ', '.join(['%.3f' % s for s in scores])
-    print('%s: [%.3f] %s' % (name, score, scores))
-    
+import numpy as np
+from models import DPForecaster, WPForecaster, YOForecaster, ARForecaster  
+from comparisons import compare_models  
 
 train_data = pd.read_csv('./data/train_data.csv', low_memory=False, 
                          infer_datetime_format=True, parse_dates=True,
@@ -27,21 +23,14 @@ test_data.index.freq = test_data.index.inferred_freq
 train_data = train_data['global_active_power']
 test_data = test_data['global_active_power']
 
-days = ['sun', 'mon', 'tue', 'wed', 'thr', 'fri', 'sat']
+models = {'daily' : DPForecaster(),
+          'weekly' : WPForecaster(),
+          'yearly' : YOForecaster(),
+#          'ar' : ARForecaster()
+          }
 
-dpf = ('daily', DPForecaster())
-wpf = ('weekly', WPForecaster())
-yof = ('yearly', YOForecaster())
-arf = ('ar', ARForecaster())
 
-models = [dpf, wpf, yof, arf]
+compare_models(['daily', 'weekly', 'yearly'], models, train_data, test_data)
 
-for name, model in models:
-    score, scores = model.evaluate_model(train_data, test_data)
-    summarise_scores(name, score, scores)
-    plt.plot(days, scores, marker='o', label=name)
-    
-plt.legend()
-plt.show()
     
 
