@@ -24,7 +24,7 @@ test_data = test_data['global_active_power']
 
 models = get_models()
 
-model_subset = ['yearly', 'lr', 'ransac']
+model_subset = ['daily', 'weekly', 'yearly']
 
-compare_models(model_subset, models, train_data, test_data)
-compare_forecasts(model_subset, models, train_data, test_data)
+compare_models(model_subset, models, train_data, test_data, fold_length=7)
+compare_forecasts(model_subset, models, train_data, test=test_data, n_steps=7)

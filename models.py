@@ -18,31 +18,33 @@ from statsmodels.tsa.arima_model import ARIMA
 
 class TSForecaster():
     
-    def evaluate_model(self, train, test):
-        forecast = np.zeros((len(test)//7,7))
+    def evaluate_model(self, train, test, fold_length=7):
+        n_folds = int(np.ceil(len(test)/fold_length))
+        forecast = np.zeros((n_folds,fold_length))
         for i in range(forecast.shape[0]):
             self.fit(train)
-            prediction = self._forecast(train)
+            prediction = self._forecast(train, fold_length)
             forecast[i,:] = prediction
-            train = train.append(test[i*7:(i+1)*7])
+            train = train.append(test[i*fold_length:(i+1)*fold_length])
         forecast = forecast.reshape((-1,1))
-        scores, score = self.evaluate_forecast(forecast, test)
-        return scores, score
+        forecast = forecast[:len(test)]
+        rmse, daily_rmse = self.evaluate_forecast(forecast, test)
+        return rmse, daily_rmse
     
     def evaluate_forecast(self, forecast, actual):
-        score = np.sqrt(mean_squared_error(forecast, actual))
+        rmse = np.sqrt(mean_squared_error(forecast, actual))
         forecast = forecast.reshape((-1,7))
         actual = actual.values.reshape((-1,7))
-        scores = np.zeros((7))
+        daily_rmse = np.zeros((7))
         for i in range(7):
-            scores[i] = np.sqrt(mean_squared_error(forecast[:,i], actual[:,i]))
-        return score, scores
+            daily_rmse[i] = np.sqrt(mean_squared_error(forecast[:,i], actual[:,i]))
+        return rmse, daily_rmse
         
-    def forecast(self, data):
+    def forecast(self, data, n_steps=7):
         self.fit(data)
-        forecast = self._forecast(data)
-        dates = data.index + 7
-        forecast = pd.Series(forecast, index=dates[-7:])
+        forecast = self._forecast(data, n_steps)
+        dates = data.index + n_steps
+        forecast = pd.Series(forecast, index=dates[-n_steps:])
         return forecast
 
 class LTSForecaster(TSForecaster):
@@ -74,8 +76,8 @@ class LTSForecaster(TSForecaster):
         self.model = self.model.fit(X_train, y_train)
         return
     
-    def _forecast(self, data):
-        prediction = np.zeros((7))
+    def _forecast(self, data, n_steps):
+        prediction = np.zeros((n_steps))
         n_inputs = self.n_inputs
         data = data.values
         for i in range(len(prediction)):
@@ -89,18 +91,20 @@ class NTSForecaster(TSForecaster):
         return
      
 class DPForecaster(NTSForecaster):   
-    def _forecast(self, data):
-        prediction = np.array(data[-1]).repeat(7)
+    def _forecast(self, data, n_steps):
+        prediction = np.array(data[-1]).repeat(n_steps)
         return prediction
     
 class WPForecaster(NTSForecaster):  
-    def _forecast(self, data):
-        prediction = np.array(data[-7:])
+    def _forecast(self, data, n_steps):
+        prediction = np.zeros((n_steps))
+        for i in range(len(prediction)):
+            prediction[i] = data[-7+i]
         return prediction
     
 class YAForecaster(NTSForecaster):
-    def _forecast(self, data):
-        prediction = np.array(data[-364:-357])
+    def _forecast(self, data, n_steps):
+        prediction = np.array(data[-364:-364+n_steps])
         return prediction
     
 class ARForecaster(TSForecaster):
@@ -110,8 +114,10 @@ class ARForecaster(TSForecaster):
         self.model = model.fit(disp=False)
         return
     
-    def _forecast(self, data):
-        prediction = self.model.predict(len(data), len(data)+6)
+    def _forecast(self, data, n_steps):
+        start_idx = len(data)
+        end_idx = len(data)+(n_steps-1)
+        prediction = self.model.predict(start_idx, end_idx)
         return prediction
     
 def get_models():
