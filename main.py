@@ -24,7 +24,18 @@ test_data = test_data['global_active_power']
 
 models = get_models()
 
-model_subset = ['daily', 'weekly', 'yearly']
+model_subset = ['daily', 'weekly', 'yearly', 
+                'ar', 'lr', 'lasso', 'ridge', 'en', 'huber', 
+#                'lars', 'llars', 'pa', 'ransac', 'sgd'
+                ]
 
-compare_models(model_subset, models, train_data, test_data, fold_length=7)
-compare_forecasts(model_subset, models, train_data, test=test_data, n_steps=7)
+n_training = None
+n_inputs = 7
+n_steps = 7
+fold_length = 7
+
+compare_models(model_subset, models, train_data, test_data, fold_length=fold_length,
+               n_inputs=n_inputs, n_training=n_training)
+
+compare_forecasts(model_subset, models, train_data, test=test_data, n_steps=n_steps,
+                  n_training=n_training)

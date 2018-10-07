@@ -26,6 +26,7 @@ def model_comp_plot(names, rmse, daily_rmse):
     
     ax2.set_title('Per-day Forecast RMSE')
     ax2.legend()
+    fig.autofmt_xdate()
     
     return
 

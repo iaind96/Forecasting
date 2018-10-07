@@ -18,11 +18,11 @@ from statsmodels.tsa.arima_model import ARIMA
 
 class TSForecaster():
     
-    def evaluate_model(self, train, test, fold_length=7):
+    def evaluate_model(self, train, test, fold_length=7, n_inputs=None, n_training=None):
         n_folds = int(np.ceil(len(test)/fold_length))
         forecast = np.zeros((n_folds,fold_length))
         for i in range(forecast.shape[0]):
-            self.fit(train)
+            self.fit(train, n_inputs=n_inputs, n_training=n_training)
             prediction = self._forecast(train, fold_length)
             forecast[i,:] = prediction
             train = train.append(test[i*fold_length:(i+1)*fold_length])
@@ -40,8 +40,8 @@ class TSForecaster():
             daily_rmse[i] = np.sqrt(mean_squared_error(forecast[:,i], actual[:,i]))
         return rmse, daily_rmse
         
-    def forecast(self, data, n_steps=7):
-        self.fit(data)
+    def forecast(self, data, n_steps=7, n_training=None):
+        self.fit(data, n_training=n_training)
         forecast = self._forecast(data, n_steps)
         dates = data.index + n_steps
         forecast = pd.Series(forecast, index=dates[-n_steps:])
@@ -69,9 +69,10 @@ class LTSForecaster(TSForecaster):
         self.model = Pipeline(steps=steps)
         return
      
-    def fit(self, data):
-        n_inputs = 7
-        X_train, y_train = self.to_supervised(data, n_inputs)
+    def fit(self, data, n_inputs=7, n_training=None):
+        if n_training is None:
+            n_training = len(data)
+        X_train, y_train = self.to_supervised(data[-n_training:], n_inputs)
         self.n_inputs = n_inputs
         self.model = self.model.fit(X_train, y_train)
         return
@@ -87,7 +88,7 @@ class LTSForecaster(TSForecaster):
         return prediction
         
 class NTSForecaster(TSForecaster):    
-    def fit(self, *args):
+    def fit(self, *args, **kwargs):
         return
      
 class DPForecaster(NTSForecaster):   
@@ -108,15 +109,18 @@ class YAForecaster(NTSForecaster):
         return prediction
     
 class ARForecaster(TSForecaster):
-    def fit(self, data):
+    def fit(self, data, n_inputs=7, n_training=None):
+        if n_training is None:
+            n_training = len(data)
         freq = data.index.inferred_freq
-        model = ARIMA(data, order=(7,0,0), freq=freq)
+        model = ARIMA(data[-n_training:], order=(n_inputs,0,0), freq=freq)
         self.model = model.fit(disp=False)
+        self.training_data = data[-n_training:]
         return
     
     def _forecast(self, data, n_steps):
-        start_idx = len(data)
-        end_idx = len(data)+(n_steps-1)
+        start_idx = len(self.training_data)
+        end_idx = len(self.training_data)+(n_steps-1)
         prediction = self.model.predict(start_idx, end_idx)
         return prediction
     
