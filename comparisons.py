@@ -21,5 +21,5 @@ def compare_models(names, models, train_data, test_data):
         print('%s: [%.3f] %s' % (name, score, scores))
         i = i + 1
     
-    model_comp_plot(names, daily_rmse)
+    model_comp_plot(names, rmse, daily_rmse)
     return rmse, daily_rmse

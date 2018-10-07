@@ -7,7 +7,7 @@ Created on Fri Oct  5 11:55:07 2018
 """
 import pandas as pd
 import numpy as np
-from models import DPForecaster, WPForecaster, YOForecaster, ARForecaster  
+from models import get_models
 from comparisons import compare_models  
 
 train_data = pd.read_csv('./data/train_data.csv', low_memory=False, 
@@ -23,14 +23,9 @@ test_data.index.freq = test_data.index.inferred_freq
 train_data = train_data['global_active_power']
 test_data = test_data['global_active_power']
 
-models = {'daily' : DPForecaster(),
-          'weekly' : WPForecaster(),
-          'yearly' : YOForecaster(),
-#          'ar' : ARForecaster()
-          }
+models = get_models()
 
-
-compare_models(['daily', 'weekly', 'yearly'], models, train_data, test_data)
+compare_models(['daily', 'weekly', 'yearly', 'ar', 'lr'], models, train_data, test_data)
 
     
 
