@@ -128,7 +128,7 @@ def get_models():
     models['lars'] = LTSForecaster(Lars())
     models['llars'] = LTSForecaster(LassoLars())
     models['pa'] = LTSForecaster(PassiveAggressiveRegressor(max_iter=1000, tol=1e-3))
-    models['ranscac'] = LTSForecaster(RANSACRegressor())
+    models['ransac'] = LTSForecaster(RANSACRegressor())
     models['sgd'] = LTSForecaster(SGDRegressor(max_iter=1000, tol=1e-3))
     return models
     

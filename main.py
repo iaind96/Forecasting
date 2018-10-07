@@ -6,9 +6,8 @@ Created on Fri Oct  5 11:55:07 2018
 @author: iain
 """
 import pandas as pd
-import numpy as np
 from models import get_models
-from comparisons import compare_models  
+from analysis import compare_models, compare_forecasts
 
 train_data = pd.read_csv('./data/train_data.csv', low_memory=False, 
                          infer_datetime_format=True, parse_dates=True,
@@ -25,7 +24,7 @@ test_data = test_data['global_active_power']
 
 models = get_models()
 
-compare_models(['daily', 'weekly', 'yearly', 'ar', 'lr'], models, train_data, test_data)
+model_subset = ['yearly', 'lr', 'ransac']
 
-    
-
+compare_models(model_subset, models, train_data, test_data)
+compare_forecasts(model_subset, models, train_data, test_data)
