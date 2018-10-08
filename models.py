@@ -14,6 +14,7 @@ from sklearn.linear_model import (LinearRegression, Lasso, Ridge, ElasticNet,
                                   HuberRegressor, Lars, LassoLars,
                                   PassiveAggressiveRegressor, RANSACRegressor,
                                   SGDRegressor)
+from sklearn.svm import SVR
 from statsmodels.tsa.arima_model import ARIMA
 
 class TSForecaster():
@@ -86,6 +87,22 @@ class LTSForecaster(TSForecaster):
             prediction[i] = self.model.predict(X)
             data = np.append(data, prediction[i])
         return prediction
+    
+class ARForecaster(TSForecaster):
+    def fit(self, data, n_inputs=7, n_training=None):
+        if n_training is None:
+            n_training = len(data)
+        freq = data.index.inferred_freq
+        model = ARIMA(data[-n_training:], order=(n_inputs,0,0), freq=freq)
+        self.model = model.fit(disp=False)
+        self.training_data = data[-n_training:]
+        return
+    
+    def _forecast(self, data, n_steps):
+        start_idx = len(self.training_data)
+        end_idx = len(self.training_data)+(n_steps-1)
+        prediction = self.model.predict(start_idx, end_idx)
+        return prediction
         
 class NTSForecaster(TSForecaster):    
     def fit(self, *args, **kwargs):
@@ -108,21 +125,19 @@ class YAForecaster(NTSForecaster):
         prediction = np.array(data[-364:-364+n_steps])
         return prediction
     
-class ARForecaster(TSForecaster):
-    def fit(self, data, n_inputs=7, n_training=None):
-        if n_training is None:
-            n_training = len(data)
-        freq = data.index.inferred_freq
-        model = ARIMA(data[-n_training:], order=(n_inputs,0,0), freq=freq)
-        self.model = model.fit(disp=False)
-        self.training_data = data[-n_training:]
+class RAForecaster(NTSForecaster):
+    def __init__(self,n):
+        self.n = n
         return
     
     def _forecast(self, data, n_steps):
-        start_idx = len(self.training_data)
-        end_idx = len(self.training_data)+(n_steps-1)
-        prediction = self.model.predict(start_idx, end_idx)
-        return prediction
+        prediction = np.zeros((n_steps))
+        data = data.values
+        n = self.n
+        for i in range(len(prediction)):
+            prediction[i] = np.mean(data[-n:])
+            data = np.append(data, prediction[i])
+        return prediction   
     
 def get_models():
     models = {}
@@ -140,5 +155,7 @@ def get_models():
     models['pa'] = LTSForecaster(PassiveAggressiveRegressor(max_iter=1000, tol=1e-3))
     models['ransac'] = LTSForecaster(RANSACRegressor())
     models['sgd'] = LTSForecaster(SGDRegressor(max_iter=1000, tol=1e-3))
+    models['svr'] = LTSForecaster(SVR())
+    models['ra'] = RAForecaster(56)
     return models
     

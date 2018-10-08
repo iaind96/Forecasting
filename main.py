@@ -24,10 +24,7 @@ test_data = test_data['global_active_power']
 
 models = get_models()
 
-model_subset = ['daily', 'weekly', 'yearly', 
-                'ar', 'lr', 'lasso', 'ridge', 'en', 'huber', 
-#                'lars', 'llars', 'pa', 'ransac', 'sgd'
-                ]
+model_subset = ['ra', 'svr', 'lr', 'ar']
 
 n_training = None
 n_inputs = 7

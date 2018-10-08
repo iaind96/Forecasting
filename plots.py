@@ -7,7 +7,6 @@ Created on Sat Oct  6 17:12:44 2018
 """
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import pandas as pd
 
 def model_comp_plot(names, rmse, daily_rmse): 
     fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
