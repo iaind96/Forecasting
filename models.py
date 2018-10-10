@@ -16,9 +16,10 @@ from sklearn.linear_model import (LinearRegression, Lasso, Ridge, ElasticNet,
                                   SGDRegressor)
 from sklearn.svm import SVR
 from statsmodels.tsa.arima_model import ARIMA
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, LSTM
 
 class TSForecaster():
-    
     def evaluate_model(self, train, test, fold_length=7, n_inputs=None, n_training=None):
         n_folds = int(np.ceil(len(test)/fold_length))
         forecast = np.zeros((n_folds,fold_length))
@@ -73,7 +74,7 @@ class LTSForecaster(TSForecaster):
     def fit(self, data, n_inputs=7, n_training=None):
         if n_training is None:
             n_training = len(data)
-        X_train, y_train = self.to_supervised(data[-n_training:], n_inputs)
+        X_train, y_train = self.tp_supervised(data[-n_training:], n_inputs)
         self.n_inputs = n_inputs
         self.model = self.model.fit(X_train, y_train)
         return
@@ -84,6 +85,51 @@ class LTSForecaster(TSForecaster):
         data = data.values
         for i in range(len(prediction)):
             X = data[-n_inputs:].reshape((1,-1))
+            prediction[i] = self.model.predict(X)
+            data = np.append(data, prediction[i])
+        return prediction
+    
+class LSTMForecaster(TSForecaster):
+    def __init__(self):
+        model = Sequential()
+        model.add(LSTM(10, input_shape=(7,1)))
+        model.add(Dense(1))
+        model.compile(loss='mean_squared_error', optimizer='adam')
+        self.model = model
+        
+    def to_supervised(self, data):
+        y = data
+        x = data.shift(1)#.fillna(0, inplace=True)
+        x.fillna(0, inplace=True)
+        N_obvs = len(data)//7
+        X = np.zeros((N_obvs, 7))
+        Y = np.zeros((N_obvs))
+        for i in range(N_obvs):
+            X[i,:] = x[i*7:(i+1)*7]
+            Y[i] = y[(i+1)*7-1]
+        return X, Y
+    
+    def scale_data(self, X):
+        scaler = MinMaxScaler()
+        X_scaled = scaler.fit_transform(X)
+        self.scaler = scaler
+        return X_scaled
+        
+    def fit(self, data, *args, **kwargs):
+        X_train, Y_train = self.to_supervised(data)
+        X_scaled = self.scale_data(X_train)
+        X_scaled = X_scaled.reshape((X_scaled.shape[0], X_scaled.shape[1], 1))
+        self.model.fit(X_scaled, Y_train, epochs=1000)
+        
+        
+    def _forecast(self, data, n_steps):
+        prediction = np.zeros((n_steps))
+        n_inputs = 7
+        data = data.values
+        for i in range(len(prediction)):
+            X = data[-n_inputs:].reshape((1, n_inputs))
+            X = self.scaler.transform(X)
+            X = X.reshape((X.shape[0], X.shape[1], 1))
             prediction[i] = self.model.predict(X)
             data = np.append(data, prediction[i])
         return prediction
@@ -157,5 +203,6 @@ def get_models():
     models['sgd'] = LTSForecaster(SGDRegressor(max_iter=1000, tol=1e-3))
     models['svr'] = LTSForecaster(SVR())
     models['ra'] = RAForecaster(56)
+    models['lstm'] = LSTMForecaster()
     return models
     
