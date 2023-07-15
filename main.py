@@ -18,11 +18,9 @@ fold_length = 7
 model_subset = ['yearly', 'lr', 'ar', 'lstm']
 models = generate_models(model_subset)
 
-#exp1 = Experiment1(models, train_data, test_data, fold_length=fold_length,
-#                   max_training=max_training)
-#exp1.run_experiment()
-#
-#exp2 = Experiment2(models, train_data, test=test_data, n_steps=n_steps)
-#exp2.run_experiment()
+exp1 = Experiment1(models, train_data, test_data, fold_length=fold_length,
+                   max_training=max_training)
+exp1.run_experiment()
 
-forecast = models['lstm'].simple_forecast(train_data, test_data)
+exp2 = Experiment2(models, train_data, test=test_data, n_steps=n_steps)
+exp2.run_experiment()
